@@ -1,20 +1,20 @@
 # Use Windows Server Core as the base image
 FROM mcr.microsoft.com/windows/servercore:ltsc2022
 
-# Set PowerShell as the shell for the remaining steps
+# Set PowerShell as the shell for some operations
 SHELL ["powershell", "-Command"]
 
 # Set up Android SDK environment variables
 ENV ANDROID_HOME=C:\Android
 ENV PATH=$env:PATH;$ANDROID_HOME\cmdline-tools\latest\bin;$ANDROID_HOME\platform-tools;$ANDROID_HOME\build-tools\30.0.3
 
-# Switch to CMD shell for directory operations
+# Switch to CMD shell for directory operations and file handling
 SHELL ["cmd", "/S", "/C"]
 
 # Create Android SDK directory
 RUN mkdir %ANDROID_HOME%
 
-# Switch back to PowerShell
+# Switch to PowerShell for remaining operations
 SHELL ["powershell", "-Command"]
 
 # Install Android SDK command line tools
