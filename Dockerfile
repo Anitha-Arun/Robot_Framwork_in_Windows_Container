@@ -35,9 +35,7 @@ RUN Invoke-WebRequest -Uri 'https://dl.google.com/android/repository/sdk-tools-w
     Remove-Item -Path 'C:\\sdk-tools.zip'
 
 # Ensure correct PATH and ANDROID_HOME for Android SDK
-ENV ANDROID_HOME="C:\\ProgramData\\android-sdk" `
-    ANDROID_SDK_ROOT="C:\\ProgramData\\android-sdk" `
-    PATH="${PATH};C:\\ProgramData\\android-sdk\\platform-tools;C:\\ProgramData\\android-sdk\\cmdline-tools\\latest\\bin;C:\\ProgramData\\android-sdk\\tools;C:\\Program Files\\nodejs;C:\\ProgramData\\chocolatey\\bin"
+ENV ANDROID_HOME="C:\\ProgramData\\android-sdk" `ANDROID_SDK_ROOT="C:\\ProgramData\\android-sdk" `PATH="${PATH};C:\\ProgramData\\android-sdk\\platform-tools;C:\\ProgramData\\android-sdk\\cmdline-tools\\latest\\bin;C:\\ProgramData\\android-sdk\\tools;C:\\Program Files\\nodejs;C:\\ProgramData\\chocolatey\\bin"
 
 # Download and install Java JDK 17
 RUN Invoke-WebRequest -Uri 'https://download.oracle.com/java/17/latest/jdk-17_windows-x64_bin.exe' -OutFile 'C:\\jdk-17_windows-x64_bin.exe'; \
