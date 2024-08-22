@@ -1,29 +1,52 @@
+# Use Windows Server Core as the base image
 FROM mcr.microsoft.com/windows/servercore:ltsc2022
+
+# Set PowerShell as the shell
 SHELL ["powershell", "-Command"]
 
-# Install Chocolatey and wget
+# Install Chocolatey
 RUN Invoke-WebRequest -Uri 'https://community.chocolatey.org/install.ps1' -OutFile 'C:\\install.ps1'; \
-    & 'C:\\install.ps1'; \
-    choco install wget -y
+    & 'C:\\install.ps1'
 
-# Set environment variables
-ENV ANDROID_HOME=C:\Android\sdk
-ENV PATH=$env:PATH;$ANDROID_HOME\cmdline-tools\latest\bin;$ANDROID_HOME\platform-tools;$ANDROID_HOME\build-tools\30.0.3
+# Install Node.js using Chocolatey
+RUN choco install nodejs-lts -y
 
-# Download and install Android SDK command-line tools and platform-tools
-RUN wget https://dl.google.com/android/repository/commandlinetools-win-9477386_latest.zip -O C:\android-sdk-tools.zip ; \
-    Expand-Archive -Path C:\android-sdk-tools.zip -DestinationPath $env:ANDROID_HOME -Force ; \
-    Remove-Item -Path C:\android-sdk-tools.zip ; \
-    Rename-Item -Path "$env:ANDROID_HOME\cmdline-tools\cmdline-tools" -NewName "latest"
+# Download and install Java JDK 17
+RUN Invoke-WebRequest -Uri 'https://download.oracle.com/java/17/latest/jdk-17_windows-x64_bin.exe' -OutFile 'C:\\jdk-17_windows-x64_bin.exe'; \
+    Start-Process -FilePath 'C:\\jdk-17_windows-x64_bin.exe' -ArgumentList '/s' -NoNewWindow -Wait; \
+    Remove-Item -Path 'C:\\jdk-17_windows-x64_bin.exe'
 
-RUN wget https://dl.google.com/android/repository/platform-tools-latest-windows.zip -O C:\platform-tools.zip ; \
-    Expand-Archive -Path C:\platform-tools.zip -DestinationPath $env:ANDROID_HOME -Force ; \
-    Remove-Item -Path C:\platform-tools.zip
+# Install Python 3.8.5
+RUN Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.8.5/python-3.8.5-amd64.exe' -OutFile 'C:\\python-3.8.5-amd64.exe'; \
+    Start-Process -FilePath 'C:\\python-3.8.5-amd64.exe' -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1' -NoNewWindow -Wait; \
+    Remove-Item -Path 'C:\\python-3.8.5-amd64.exe'
 
-# Install SDK packages
-RUN & "$env:ANDROID_HOME\cmdline-tools\latest\bin\sdkmanager.bat" --licenses --sdk_root=$env:ANDROID_HOME; \
-    & "$env:ANDROID_HOME\cmdline-tools\latest\bin\sdkmanager.bat" "platform-tools" "build-tools;30.0.3" "emulator"
+# Install Appium 1.22.3 and appium-doctor using npm
+RUN npm install -g appium@1.22.3 appium-doctor --unsafe-perm=true
 
-# Verify installation
-RUN Get-ChildItem -Path "$env:ANDROID_HOME\build-tools\30.0.3"; \
-    Get-ChildItem -Path "$env:ANDROID_HOME\cmdline-tools\latest\bin"
+# Install Android SDK and related tools using Chocolatey
+RUN choco install android-sdk -y
+RUN choco install android-ndk -y
+
+# Set environment variables for Android SDK
+ENV ANDROID_HOME=C:\ProgramData\chocolatey\lib\android-sdk\tools
+ENV PATH=%PATH%;%ANDROID_HOME%\tools;%ANDROID_HOME%\platform-tools;%ANDROID_HOME%\build-tools\30.0.3
+
+# Install Android SDK components
+RUN sdkmanager "platform-tools" "platforms;android-30" "build-tools;30.0.3"
+
+# Set JAVA_HOME environment variable
+ENV JAVA_HOME="C:\\Program Files\\Java\\jdk-17"
+
+# Verify installations and run appium-doctor
+RUN node -v; \
+    npm -v; \
+    java -version; \
+    python --version; \
+    python3.8 --version; \
+    appium --version; \
+    appium-doctor --version; \
+    appium-doctor
+
+# Default command to keep the container running
+CMD ["cmd"]
