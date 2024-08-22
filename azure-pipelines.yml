@@ -1,0 +1,41 @@
+trigger:
+- main  # Adjust to your branch name if necessary
+
+pool:
+   vmImage: 'windows-latest' 
+   name: Azure Pipelines  # Change to 'windows-latest' if using a Windows agent
+
+steps:
+- checkout: self
+
+- script: |
+    echo "Building Docker image..."
+    docker build -t my-custom-image:latest .
+  displayName: 'Build Docker Image'
+
+- script: |
+    echo "Running Docker container..."
+    docker run --name my-container -d my-custom-image:latest /bin/bash -c "while true; do sleep 30; done;"
+  displayName: 'Run Docker Container'
+
+- script: |
+    echo "Copying PartnerDevices_Automation folder to Docker container..."
+    docker cp PartnerDevices_Automation my-container:/app/PartnerDevices_Automation
+  displayName: 'Copy Folder to Docker Container'
+
+- script: |
+    echo "Checking paths inside Docker container..."
+    docker exec my-container /bin/bash -c "ls -l /app/PartnerDevices_Automation/resources/Page_objects/"
+  displayName: 'Check Paths'
+
+
+- script: |
+    echo "Running Robot Framework tests..."
+    docker exec my-container /bin/bash -c "cd /app/PartnerDevices_Automation && robot -d /results -i 237605 tests_teams_room"
+  displayName: 'Run Robot Framework Tests'
+
+- script: |
+    echo "Stopping Docker container..."
+    docker stop my-container
+    docker rm my-container
+  displayName: 'Stop and Remove Docker Container'
