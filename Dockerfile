@@ -1,7 +1,7 @@
 # Use a base Windows image
 FROM mcr.microsoft.com/windows/servercore:ltsc2022
 
-# Install PowerShell
+# Install PowerShell and Scoop
 SHELL ["powershell", "-Command"]
 
 # Install Scoop
