@@ -10,7 +10,7 @@ RUN Invoke-WebRequest -Uri 'https://chocolatey.org/install.ps1' -OutFile 'instal
 
 
 # Install Android SDK using Chocolatey
-RUN choco install android-sdk --version=30.0.3 --yes
+RUN choco install android-sdk  --yes
 
 # Set environment variables
 ENV ANDROID_HOME="C:\\ProgramData\\chocolatey\\lib\\android-sdk\\tools"
