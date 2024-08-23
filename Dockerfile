@@ -7,14 +7,12 @@ SHELL ["powershell", "-Command"]
 RUN Invoke-WebRequest -Uri 'https://chocolatey.org/install.ps1' -OutFile 'install.ps1'; \
     & .\install.ps1
 
-# Install Java JDK 17 using Chocolatey
-RUN choco install jdk17 --yes
+
 
 # Install Android SDK using Chocolatey
 RUN choco install android-sdk --version=30.0.3 --yes
 
 # Set environment variables
-ENV JAVA_HOME="C:\\Program Files\\Java\\jdk-17"
 ENV ANDROID_HOME="C:\\ProgramData\\chocolatey\\lib\\android-sdk\\tools"
 ENV PATH="${PATH};${ANDROID_HOME}\\bin;${ANDROID_HOME}\\platform-tools"
 
