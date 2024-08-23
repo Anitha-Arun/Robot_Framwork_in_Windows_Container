@@ -1,25 +1,15 @@
-FROM mcr.microsoft.com/windows/servercore:ltsc2022
-
-SHELL ["powershell", "-Command"]
-
-# Set environment variables
-ENV ANDROID_HOME=C:\Android\Sdk
-ENV PATH="$PATH;$ANDROID_HOME\cmdline-tools\latest\bin;$ANDROID_HOME\platform-tools;$ANDROID_HOME\build-tools\latest"
-
-# Install Android SDK command line tools and platform-tools
-RUN New-Item -Path $env:ANDROID_HOME -ItemType Directory -Force; `
-    New-Item -Path "$env:ANDROID_HOME\cmdline-tools" -ItemType Directory -Force; `
-    Invoke-WebRequest -Uri 'https://dl.google.com/android/repository/commandlinetools-win-9477386_latest.zip' -OutFile 'C:\commandlinetools.zip'; `
-    Expand-Archive -Path 'C:\commandlinetools.zip' -DestinationPath "$env:ANDROID_HOME\cmdline-tools"; `
-    Remove-Item -Path 'C:\commandlinetools.zip' -Force; `
-    Rename-Item -Path "$env:ANDROID_HOME\cmdline-tools\cmdline-tools" -NewName 'latest'; `
-    Invoke-WebRequest -Uri 'https://dl.google.com/android/repository/platform-tools-latest-windows.zip' -OutFile 'C:\platform-tools.zip'; `
-    Expand-Archive -Path 'C:\platform-tools.zip' -DestinationPath "$env:ANDROID_HOME"; `
-    Remove-Item -Path 'C:\platform-tools.zip' -Force
-
-# Install Build Tools and SDK Packages
-RUN & "$env:ANDROID_HOME\cmdline-tools\latest\bin\sdkmanager.bat" --licenses --sdk_root=$env:ANDROID_HOME; `
-    & "$env:ANDROID_HOME\cmdline-tools\latest\bin\sdkmanager.bat" "platform-tools" "build-tools;30.0.3" "emulator" --verbose
-
-# Verify Build Tools Installation
-RUN Test-Path "$env:ANDROID_HOME\build-tools\30.0.3" -and Test-Path "$env:ANDROID_HOME\cmdline-tools\latest\bin\sdkmanager.bat"
+FROM mcr.microsoft.com/windows/servercore:ltsc2019
+    
+    # Restore the default Windows shell for correct batch processing.
+ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+    
+    #Install 7Zip
+ RUN [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; `
+        Invoke-WebRequest -UseBasicParsing https://www.7-zip.org/a/7z1805-x64.msi -OutFile 7z.msi; `
+        Start-Process msiexec -ArgumentList '/i 7z.msi', '/quiet', '/norestart' -NoNewWindow -Wait; `
+        Remove-Item -Force 7z.msi;
+    
+    SHELL ["cmd", "/S", "/C"]
+    
+    # Install Android SDK 28 using cmdline tools for Android 
+RUN curl -SL --output cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-win-8512546_latest.zip && "C:\Program Files\7-Zip\7z.exe" e cmdline-tools.zip -o"C:\Program Files (x86)\Android\android-sdk" && cd "C:\Program Files (x86)\Android\android-sdk\tools\bin" && echo y|sdkmanager "platform-tools" "platforms;android-28"
