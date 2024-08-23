@@ -1,38 +1,21 @@
+# Use a Windows Server Core base image with PowerShell
 FROM mcr.microsoft.com/windows/servercore:ltsc2022
 
-# Use PowerShell as the default shell
-SHELL ["powershell", "-Command"]
-
-# Install Chocolatey
-RUN Invoke-WebRequest -Uri 'https://chocolatey.org/install.ps1' -OutFile 'install.ps1'; \
-    & .\install.ps1
-
-
-
-# Install Android SDK using Chocolatey
-RUN choco install android-sdk  --yes
+# Install the Android SDK Command Line Tools
+RUN powershell -Command "& { \
+    Invoke-WebRequest -Uri https://dl.google.com/android/repository/commandlinetools-win-8512546_latest.zip -OutFile cmdline-tools.zip; \
+    Expand-Archive -Path cmdline-tools.zip -DestinationPath C:\Android; \
+    Remove-Item -Path cmdline-tools.zip -Force; \
+    [System.IO.Directory]::Move('C:\Android\cmdline-tools\latest', 'C:\Android\cmdline-tools\tools'); \
+    cd C:\Android\cmdline-tools\tools\bin; \
+    .\sdkmanager.bat --licenses; \
+    .\sdkmanager.bat --no_https --licenses; \
+    .\sdkmanager.bat "platform-tools" "platforms;android-30" --no_https \
+}"
 
 # Set environment variables
-ENV ANDROID_HOME="C:\\ProgramData\\chocolatey\\lib\\android-sdk\\tools"
-ENV PATH="${PATH};${ANDROID_HOME}\\bin;${ANDROID_HOME}\\platform-tools"
+ENV ANDROID_HOME C:/Android
+ENV PATH $PATH;C:/Android/platform-tools;C:/Android/tools
 
-# Manually create license files to accept licenses
-RUN $env:ANDROID_HOME = 'C:\\ProgramData\\chocolatey\\lib\\android-sdk'; \
-    New-Item -Path "$env:ANDROID_HOME\\licenses" -ItemType Directory -Force; \
-    $license1 = '8933bad161af4178b1185d1a37fbf41ea5269c55'; \
-    $license2 = '84831b9409646a918e30573bab4c9c91346d8abd'; \
-    Set-Content -Path "$env:ANDROID_HOME\\licenses\\android-sdk-license" -Value "`n$license1" -Force; \
-    Set-Content -Path "$env:ANDROID_HOME\\licenses\\android-sdk-preview-license" -Value "`n$license2" -Force
-
-# Install specific SDK components using Command Prompt
-SHELL ["cmd", "/S", "/C"]
-
-RUN echo yes | %ANDROID_HOME%\\cmdline-tools\\latest\\bin\\sdkmanager.bat "build-tools;34.0.0" && \
-    echo yes | %ANDROID_HOME%\\cmdline-tools\\latest\\bin\\sdkmanager.bat "platforms;android-33"
-
-# Verify installation
-RUN if exist "%ANDROID_HOME%\\cmdline-tools\\latest\\bin\\sdkmanager.bat" ( \
-    echo sdkmanager found; \
-    ) else ( \
-    echo sdkmanager not found; exit 1; \
-    )
+# Entry point or CMD if needed
+# CMD ["powershell"]
