@@ -4,7 +4,8 @@ FROM mcr.microsoft.com/windows/servercore:ltsc2022
 SHELL ["powershell", "-Command"]
 
 # Install Chocolatey
-RUN iex "& { $(irm https://chocolatey.org/install.ps1 -UseBasicP) }"
+RUN Invoke-WebRequest -Uri 'https://chocolatey.org/install.ps1' -OutFile 'install.ps1'; \
+    & .\install.ps1
 
 # Install Java JDK 17 using Chocolatey
 RUN choco install jdk17 --yes
