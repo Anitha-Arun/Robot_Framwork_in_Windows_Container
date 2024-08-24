@@ -2,7 +2,8 @@ trigger:
 - main  # Adjust to your branch name if necessary
 
 pool:
-  vmImage: 'windows-latest'  # Use the 'windows-latest' image for Windows agents
+  vmImage: 'windows-latest' 
+  name:  AgentSelfhosted # Use the 'windows-latest' image for Windows agents
 
 steps:
 - checkout: self
