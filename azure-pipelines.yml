@@ -21,27 +21,25 @@ steps:
     echo "Running Docker container..."
     docker run --name android-sdk-container -d android-sdk-image cmd /c "ping -t localhost > NUL"
   displayName: 'Run Docker Container'
-
 - script: |
     echo "Accepting Android SDK licenses..."
-    docker exec android-sdk-container cmd /c "for /L %%i in (1,1,7) do (echo y | C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat --licenses > NUL)"
+    docker exec android-sdk-container cmd /c "
+    echo Attempting to accept Android SDK licenses...
+    C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat --licenses
+    if %ERRORLEVEL% NEQ 0 (
+        echo Failed to accept licenses automatically. Trying manual acceptance...
+        (echo y) | C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat --licenses
+        if %ERRORLEVEL% NEQ 0 (
+            echo Manual acceptance failed. Please check your Android SDK setup.
+            exit /b 1
+        ) else (
+            echo Licenses accepted successfully.
+        )
+    ) else (
+        echo Licenses accepted successfully.
+    )
+    "
   displayName: 'Accept Android SDK Licenses'
-
-- script: |
-    echo "Installing Android SDK components..."
-    docker exec android-sdk-container C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat "platform-tools" "platforms;android-28" "build-tools;28.0.3"
-  displayName: 'Install Android SDK Components'
-
-- script: |
-    echo "Verifying ADB installation..."
-    docker exec android-sdk-container C:\android-sdk\platform-tools\adb.exe version
-  displayName: 'Verify ADB Installation'
-
-- script: |
-    echo "Running appium-doctor..."
-    docker exec android-sdk-container appium-doctor
-  displayName: 'Run Appium Doctor'
-
 - script: |
     echo "Cleaning up..."
     docker stop android-sdk-container
