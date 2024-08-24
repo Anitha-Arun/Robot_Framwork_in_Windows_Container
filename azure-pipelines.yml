@@ -24,18 +24,9 @@ steps:
   displayName: 'Run Docker Container'
 
 - script: |
-    echo "Creating SDK license input file..."
-    docker exec my-container powershell -Command "
-    $responseFile = 'C:\\temp\\sdk_response.txt'
-    $yesResponses = 'y' * 100
-    [System.IO.File]::WriteAllText($responseFile, $yesResponses)
-    "
-  displayName: 'Create SDK License Input File'
-
-- script: |
     echo "Accepting Android SDK licenses..."
     docker exec my-container powershell -Command "
-    & 'C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat' --licenses < 'C:\\temp\\sdk_response.txt'
+    & 'C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat' --licenses | ForEach-Object { Write-Output 'y' }
     "
   displayName: 'Accept Android SDK Licenses'
 
