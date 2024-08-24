@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  vmImage: 'windows-latest'
+  vmImage: 'windows-latest' 
   name: Default
 
 steps:
@@ -10,67 +10,61 @@ steps:
 
 - script: |
     echo "Building Docker image..."
-    docker build -t android-sdk-image .
+    docker build -t my-custom-image:latest .
   displayName: 'Build Docker Image'
 
 - script: |
     echo "Removing existing container if it exists..."
-    docker rm -f android-sdk-container || true
+    docker rm -f my-container || true
   displayName: 'Remove Existing Container'
 
 - script: |
     echo "Running Docker container..."
-    docker run --name android-sdk-container -d android-sdk-image powershell -Command "Start-Sleep -Seconds 3600"
+    docker run --name my-container -d my-custom-image:latest powershell -Command "Start-Sleep -Seconds 3600"
   displayName: 'Run Docker Container'
 
 - script: |
     echo "Accepting Android SDK licenses..."
-    docker exec android-sdk-container cmd /c "
-    echo Attempting to accept Android SDK licenses...
-    set SDKMANAGER=C:\Users\v-adamarla\AppData\Local\Android\Sdk\cmdline-tools\latest\bin\sdkmanager.bat
-    if exist %SDKMANAGER% (
-        echo Found sdkmanager at: %SDKMANAGER%
-        echo y | %SDKMANAGER% --licenses
-    ) else (
-        echo sdkmanager not found at expected location. Please check your Android SDK installation.
-        exit /b 1
-    )
+    docker exec my-container powershell -Command "
+    $ErrorActionPreference = 'Stop';
+    $sdkmanagerPath = 'C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat';
+    if (Test-Path $sdkmanagerPath) {
+        Write-Output 'Found sdkmanager at: $sdkmanagerPath';
+        $process = Start-Process -FilePath $sdkmanagerPath -ArgumentList '--licenses' -NoNewWindow -PassThru -Wait -RedirectStandardInput 'C:\\temp\\input.txt';
+        Write-Output 'Accepting licenses...';
+        $inputFile = 'C:\\temp\\input.txt';
+        if (Test-Path $inputFile) {
+            Add-Content -Path $inputFile -Value 'y';
+            Start-Process -FilePath $sdkmanagerPath -ArgumentList '--licenses' -NoNewWindow -Wait -RedirectStandardInput $inputFile;
+            Write-Output 'Licenses accepted successfully.';
+        } else {
+            Write-Output 'Input file not found. Failed to accept licenses.';
+            exit 1;
+        }
+    } else {
+        Write-Output 'sdkmanager not found at expected location. Please check your Android SDK installation.';
+        exit 1;
+    }
     "
   displayName: 'Accept Android SDK Licenses'
 
 - script: |
-    echo "Installing Android SDK components..."
-    docker exec android-sdk-container cmd /c "
-    set SDKMANAGER=C:\Users\v-adamarla\AppData\Local\Android\Sdk\cmdline-tools\latest\bin\sdkmanager.bat
-    if exist %SDKMANAGER% (
-        %SDKMANAGER% "platform-tools" "platforms;android-28" "build-tools;28.0.3"
-    ) else (
-        echo sdkmanager not found at expected location. Please check your Android SDK installation.
-        exit /b 1
-    )
-    "
+    echo "Installing Android platform tools, build tools, and platform..."
+    docker exec my-container powershell -Command "C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat 'platform-tools' 'platforms;android-28' 'build-tools;28.0.3'"
   displayName: 'Install Android SDK Components'
 
 - script: |
     echo "Verifying ADB installation..."
-    docker exec android-sdk-container cmd /c "
-    set ADB=C:\Users\v-adamarla\AppData\Local\Android\Sdk\platform-tools\adb.exe
-    if exist %ADB% (
-        %ADB% version
-    ) else (
-        echo ADB not found at expected location. Please check your Android SDK installation.
-        exit /b 1
-    )
-    "
+    docker exec my-container powershell -Command "C:\\android-sdk\\platform-tools\\adb.exe version"
   displayName: 'Verify ADB Installation'
 
 - script: |
-    echo "Running appium-doctor..."
-    docker exec android-sdk-container appium-doctor
+    echo "Running appium-doctor to check setup..."
+    docker exec my-container powershell -Command "appium-doctor"
   displayName: 'Run Appium Doctor'
 
 - script: |
-    echo "Cleaning up..."
-    docker stop android-sdk-container
-    docker rm android-sdk-container
-  displayName: 'Clean Up'
+    echo "Stopping Docker container..."
+    docker stop my-container
+    docker rm my-container
+  displayName: 'Stop and Remove Docker Container'
