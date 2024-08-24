@@ -5,6 +5,7 @@ pool:
   vmImage: 'windows-latest'
   name: Default
 
+
 steps:
 - script: |
     echo "Building Docker image..."
@@ -13,12 +14,9 @@ steps:
 
 - script: |
     echo "Removing existing container if it exists..."
-    docker rm -f my-container || true
+    docker rm -f android-sdk-container || true
   displayName: 'Remove Existing Container'
-- script: |
-    echo "Running Docker container..."
-    docker run --name my-container -d my-custom-image:latest powershell -Command "Start-Sleep -Seconds 3600"
-  displayName: 'Run Docker Container'
+
 - script: |
     echo "Running Docker container..."
     docker run --name android-sdk-container -d android-sdk-image cmd /c "ping -t localhost > NUL"
