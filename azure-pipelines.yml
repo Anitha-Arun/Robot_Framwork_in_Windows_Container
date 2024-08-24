@@ -3,7 +3,7 @@ trigger:
 
 pool:
   vmImage: 'windows-latest' 
-  name:  Default  # Use the 'windows-latest' image for Windows agents
+  name: Default  # Use the 'windows-latest' image for Windows agents
 
 steps:
 - checkout: self
@@ -20,7 +20,7 @@ steps:
 
 - script: |
     echo "Accepting Android SDK licenses..."
-    docker exec my-container powershell -Command "yes | C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat --licenses"
+    docker exec my-container powershell -Command "$yes = 'y'; 1..100 | ForEach-Object { $yes } | & 'C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat' --licenses"
   displayName: 'Accept Android SDK Licenses'
 
 - script: |
@@ -30,7 +30,7 @@ steps:
 
 - script: |
     echo "Verifying ADB installation..."
-    docker exec my-container powershell -Command "adb version"
+    docker exec my-container powershell -Command "C:\\android-sdk\\platform-tools\\adb.exe version"
   displayName: 'Verify ADB Installation'
 
 - script: |
