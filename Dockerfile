@@ -1,27 +1,80 @@
-# Use the Windows Server Core image as the base
-FROM mcr.microsoft.com/windows/servercore:ltsc2019
+# Use a Windows Server Core image with .NET Framework pre-installed
+FROM mcr.microsoft.com/dotnet/framework/runtime:4.8-windowsservercore-ltsc2019
 
+# Set shell to PowerShell
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+# Download and install OpenJDK
+RUN Invoke-WebRequest -Uri https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.11%2B9/OpenJDK11U-jdk_x64_windows_hotspot_11.0.11_9.zip -OutFile openjdk.zip; \
+    Expand-Archive openjdk.zip -DestinationPath C:\Java; \
+    Remove-Item openjdk.zip; \
+    $javaPath = (Get-ChildItem -Path C:\Java -Filter 'jdk*' -Directory).FullName; \
+    [Environment]::SetEnvironmentVariable('JAVA_HOME', $javaPath, [EnvironmentVariableTarget]::Machine); \
+    [Environment]::SetEnvironmentVariable('PATH', $env:PATH + ';' + $javaPath + '\bin', [EnvironmentVariableTarget]::Machine);
 # Install Chocolatey
-RUN powershell -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command `Invoke-WebRequest -Uri 'https://community.chocolatey.org/install.ps1' -OutFile 'C:\\install.ps1' ; `& 'C:\\install.ps1'
+RUN Invoke-WebRequest -Uri 'https://community.chocolatey.org/install.ps1' -OutFile 'C:\\install.ps1'; \
+    & 'C:\\install.ps1'
 
-# Install Android SDK, ADB, and other tools using Chocolatey
-RUN choco install -y android-sdk adb android-ndk androidstudio
+# Install Node.js using Chocolatey
+RUN choco install nodejs-lts -y
+
+# Download and install Python 3.8.5
+RUN Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.8.5/python-3.8.5-amd64.exe' -OutFile 'C:\\python-3.8.5-amd64.exe'; \
+    Start-Process -FilePath 'C:\\python-3.8.5-amd64.exe' -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1' -NoNewWindow -Wait; \
+    Remove-Item -Path 'C:\\python-3.8.5-amd64.exe'
+
+# Install Appium 1.22.3 and appium-doctor using npm
+RUN npm install -g appium@1.22.3 appium-doctor --unsafe-perm=true
+
+
+# Install Android SDK command-line tools
+RUN mkdir C:\android-sdk; \
+    Invoke-WebRequest -Uri https://dl.google.com/android/repository/commandlinetools-win-8512546_latest.zip -OutFile C:\android-sdk-tools.zip; \
+    Expand-Archive C:\android-sdk-tools.zip -DestinationPath C:\android-sdk; \
+    Remove-Item C:\android-sdk-tools.zip; \
+    Move-Item C:\android-sdk\cmdline-tools C:\android-sdk\latest; \
+    mkdir C:\android-sdk\cmdline-tools; \
+    Move-Item C:\android-sdk\latest C:\android-sdk\cmdline-tools\latest;
 
 # Set environment variables
-ENV ANDROID_HOME=C:\Android\android-sdk
-ENV PATH=$PATH;C:\Android\android-sdk\tools;C:\Android\android-sdk\build-tools;C:\Android\android-sdk\platform-tools
+RUN [Environment]::SetEnvironmentVariable('ANDROID_HOME', 'C:\android-sdk', [EnvironmentVariableTarget]::Machine); \
+    [Environment]::SetEnvironmentVariable('PATH', $env:PATH + ';C:\android-sdk\cmdline-tools\latest\bin;C:\android-sdk\platform-tools', [EnvironmentVariableTarget]::Machine);
 
-# Copy pre-accepted license files into the container
-COPY ["tools/android-licenses/", "C:/Android/android-sdk/licenses/"]
+RUN choco install googlechrome -y 
 
-# Run additional setup commands to install SDK components and accept licenses
-RUN powershell -NoProfile -Command `& 'C:\Android\android-sdk\tools\bin\sdkmanager.bat' "platforms;android-26" "platforms;android-25" "build-tools;25.0.3" "build-tools;26.0.2" ; `& 'C:\Android\android-sdk\tools\bin\sdkmanager.bat' --licenses
+# Manually download and install ChromeDriver
+RUN Invoke-WebRequest -Uri 'https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.99/win32/chromedriver-win32.zip' -OutFile 'C:\\chromedriver.zip'; \
+    if (Test-Path 'C:\\chromedriver.zip') { \
+        Write-Output 'ChromeDriver zip file downloaded.'; \
+        Expand-Archive -Path 'C:\\chromedriver.zip' -DestinationPath 'C:\\chromedriver-temp'; \
+        Write-Output 'Contents of C:\\chromedriver-temp:'; \
+        Get-ChildItem -Path 'C:\\chromedriver-temp' -Recurse; \
+        Write-Output 'Attempting to move chromedriver.exe...'; \
+        if (-Not (Test-Path 'C:\\Program Files\\chromedriver')) { \
+            New-Item -Path 'C:\\Program Files\\chromedriver' -ItemType Directory; \
+        } \
+        if (Test-Path 'C:\\chromedriver-temp\\chromedriver-win32\\chromedriver.exe') { \
+            Move-Item -Path 'C:\\chromedriver-temp\\chromedriver-win32\\chromedriver.exe' -Destination 'C:\\Program Files\\chromedriver\\chromedriver.exe'; \
+            Remove-Item -Path 'C:\\chromedriver.zip'; \
+            Remove-Item -Path 'C:\\chromedriver-temp' -Recurse; \
+        } else { \
+            Write-Output 'Extraction successful, but chromedriver.exe not found.'; \
+            exit 1; \
+        } \
+    } else { \
+        Write-Output 'ChromeDriver zip file download failed.'; \
+        exit 1; \
+    }
 
-# Set the working directory
-WORKDIR /app
+# Verify ChromeDriver installation
+RUN if (Test-Path 'C:\\Program Files\\chromedriver\\chromedriver.exe') { \
+        & 'C:\\Program Files\\chromedriver\\chromedriver.exe' --version; \
+    } else { \
+        Write-Output 'ChromeDriver executable not found.'; \
+        exit 1; \
+    }
 
-# Optional: copy any required files or perform additional setup
-# COPY . /app
 
-# Default command (adjust as needed)
+
+# Default command
 CMD ["powershell"]
