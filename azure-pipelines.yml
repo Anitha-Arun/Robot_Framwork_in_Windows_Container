@@ -19,7 +19,24 @@ steps:
   displayName: 'Run Docker Container'
 - script: |
     echo "Accepting Android SDK licenses..."
-    docker exec my-container powershell -Command "for ($i=0; $i -lt 7; $i++) { echo 'y' | C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat --licenses }"
+    docker exec my-container powershell -Command "
+    $sdkmanager = 'C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat'
+    $licenses = @(
+        'android-sdk-license',
+        'android-sdk-preview-license',
+        'google-gdk-license',
+        'intel-android-extra-license',
+        'mips-android-sysimage-license'
+    )
+    foreach ($license in $licenses) {
+        echo y | & $sdkmanager --licenses
+        if (-not (Test-Path 'C:\android-sdk\licenses\$license')) {
+            New-Item -Path 'C:\android-sdk\licenses\$license' -ItemType File -Force
+            Add-Content -Path 'C:\android-sdk\licenses\$license' -Value '
+d56f5187479451eabf01fb78af6dfcb131a6481e'
+        }
+    }
+    "
   displayName: 'Accept Android SDK Licenses'
 - script: |
     echo "Installing Android platform tools, build tools, and platform..."
