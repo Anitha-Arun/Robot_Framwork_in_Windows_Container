@@ -26,7 +26,13 @@ steps:
 - script: |
     echo "Accepting Android SDK licenses..."
     docker exec my-container powershell -Command "
-    & 'C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat' --licenses | ForEach-Object { Write-Output 'y' }
+    $sdkmanagerPath = 'C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat'
+    if (Test-Path $sdkmanagerPath) {
+        & $sdkmanagerPath --licenses | ForEach-Object { 'y' }
+    } else {
+        Write-Host 'sdkmanager.bat not found at path.'
+        exit 1
+    }
     "
   displayName: 'Accept Android SDK Licenses'
 
