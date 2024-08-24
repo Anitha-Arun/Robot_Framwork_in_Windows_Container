@@ -1,9 +1,9 @@
 trigger:
-- main  # Adjust to your branch name if necessary
+- main
 
 pool:
   vmImage: 'windows-latest' 
-  name: Default  # Use the 'windows-latest' image for Windows agents
+  name: Default
 
 steps:
 - checkout: self
@@ -12,6 +12,11 @@ steps:
     echo "Building Docker image..."
     docker build -t my-custom-image:latest .
   displayName: 'Build Docker Image'
+
+- script: |
+    echo "Removing existing container if it exists..."
+    docker rm -f my-container || true
+  displayName: 'Remove Existing Container'
 
 - script: |
     echo "Running Docker container..."
