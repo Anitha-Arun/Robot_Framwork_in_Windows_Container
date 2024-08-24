@@ -25,30 +25,49 @@ steps:
 
 - script: |
     echo "Accepting Android SDK licenses..."
-    docker exec android-sdk-container powershell -Command "
-    \$SDKMANAGER = 'C:\\Users\\v-adamarla\\AppData\\Local\\Android\\Sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat';
-    if (Test-Path \$SDKMANAGER) {
-        Write-Host 'Found sdkmanager at:' \$SDKMANAGER;
-        Write-Host 'Creating temporary response file...';
-        'y' | Out-File -FilePath \$env:TEMP\\sdk_response.txt -Encoding ASCII;
-        for (\$i=1; \$i -le 6; \$i++) {
-            Add-Content -Path \$env:TEMP\\sdk_response.txt -Value 'y';
-        }
-        Write-Host 'Accepting licenses...';
-        & \$SDKMANAGER --licenses < \$env:TEMP\\sdk_response.txt;
-        if (\$LASTEXITCODE -eq 0) {
-            Write-Host 'Licenses accepted successfully.';
-        } else {
-            Write-Error 'Failed to accept licenses. Error code:' \$LASTEXITCODE;
-            exit 1;
-        }
-        Remove-Item \$env:TEMP\\sdk_response.txt;
-    } else {
-        Write-Error 'sdkmanager not found at expected location. Please check your Android SDK installation.';
-        exit 1;
-    }
+    docker exec android-sdk-container cmd /c "
+    echo Attempting to accept Android SDK licenses...
+    set SDKMANAGER=C:\Users\v-adamarla\AppData\Local\Android\Sdk\cmdline-tools\latest\bin\sdkmanager.bat
+    if exist %SDKMANAGER% (
+        echo Found sdkmanager at: %SDKMANAGER%
+        echo y | %SDKMANAGER% --licenses
+    ) else (
+        echo sdkmanager not found at expected location. Please check your Android SDK installation.
+        exit /b 1
+    )
     "
   displayName: 'Accept Android SDK Licenses'
+
+- script: |
+    echo "Installing Android SDK components..."
+    docker exec android-sdk-container cmd /c "
+    set SDKMANAGER=C:\Users\v-adamarla\AppData\Local\Android\Sdk\cmdline-tools\latest\bin\sdkmanager.bat
+    if exist %SDKMANAGER% (
+        %SDKMANAGER% "platform-tools" "platforms;android-28" "build-tools;28.0.3"
+    ) else (
+        echo sdkmanager not found at expected location. Please check your Android SDK installation.
+        exit /b 1
+    )
+    "
+  displayName: 'Install Android SDK Components'
+
+- script: |
+    echo "Verifying ADB installation..."
+    docker exec android-sdk-container cmd /c "
+    set ADB=C:\Users\v-adamarla\AppData\Local\Android\Sdk\platform-tools\adb.exe
+    if exist %ADB% (
+        %ADB% version
+    ) else (
+        echo ADB not found at expected location. Please check your Android SDK installation.
+        exit /b 1
+    )
+    "
+  displayName: 'Verify ADB Installation'
+
+- script: |
+    echo "Running appium-doctor..."
+    docker exec android-sdk-container appium-doctor
+  displayName: 'Run Appium Doctor'
 
 - script: |
     echo "Cleaning up..."
