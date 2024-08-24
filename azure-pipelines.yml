@@ -18,28 +18,69 @@ steps:
   displayName: 'Remove Existing Container'
 
 - script: |
-    echo "Running Docker container..."
-    docker run --name android-sdk-container -d android-sdk-image cmd /c "ping -t localhost > NUL"
-  displayName: 'Run Docker Container'
+    echo "Checking Android SDK installation..."
+    docker exec android-sdk-container cmd /c "
+    echo Listing C:\ directory:
+    dir C:\
+    echo.
+    echo Listing ANDROID_HOME directory (if it exists):
+    if defined ANDROID_HOME (
+        dir %ANDROID_HOME%
+    ) else (
+        echo ANDROID_HOME is not set
+    )
+    echo.
+    echo Searching for sdkmanager:
+    where /r C:\ sdkmanager.bat
+    "
+  displayName: 'Check Android SDK Installation'
+
 - script: |
     echo "Accepting Android SDK licenses..."
     docker exec android-sdk-container cmd /c "
     echo Attempting to accept Android SDK licenses...
-    C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat --licenses
-    if %ERRORLEVEL% NEQ 0 (
-        echo Failed to accept licenses automatically. Trying manual acceptance...
-        (echo y) | C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat --licenses
-        if %ERRORLEVEL% NEQ 0 (
-            echo Manual acceptance failed. Please check your Android SDK setup.
-            exit /b 1
-        ) else (
-            echo Licenses accepted successfully.
-        )
+    for /f "delims=" %%i in ('where /r C:\ sdkmanager.bat') do set SDKMANAGER=%%i
+    if defined SDKMANAGER (
+        echo Found sdkmanager at: %SDKMANAGER%
+        echo y | %SDKMANAGER% --licenses
     ) else (
-        echo Licenses accepted successfully.
+        echo sdkmanager not found. Please check your Android SDK installation.
+        exit /b 1
     )
     "
   displayName: 'Accept Android SDK Licenses'
+
+- script: |
+    echo "Installing Android SDK components..."
+    docker exec android-sdk-container cmd /c "
+    for /f "delims=" %%i in ('where /r C:\ sdkmanager.bat') do set SDKMANAGER=%%i
+    if defined SDKMANAGER (
+        %SDKMANAGER% "platform-tools" "platforms;android-28" "build-tools;28.0.3"
+    ) else (
+        echo sdkmanager not found. Please check your Android SDK installation.
+        exit /b 1
+    )
+    "
+  displayName: 'Install Android SDK Components'
+
+- script: |
+    echo "Verifying ADB installation..."
+    docker exec android-sdk-container cmd /c "
+    where /r C:\ adb.exe
+    if %ERRORLEVEL% EQU 0 (
+        adb version
+    ) else (
+        echo ADB not found. Please check your Android SDK installation.
+        exit /b 1
+    )
+    "
+  displayName: 'Verify ADB Installation'
+
+- script: |
+    echo "Running appium-doctor..."
+    docker exec android-sdk-container appium-doctor
+  displayName: 'Run Appium Doctor'
+
 - script: |
     echo "Cleaning up..."
     docker stop android-sdk-container
