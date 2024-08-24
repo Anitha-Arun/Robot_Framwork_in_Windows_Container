@@ -3,7 +3,8 @@ trigger:
 
 pool:
   vmImage: 'windows-latest'
-  name: Default
+  name:Default
+
 steps:
 - script: |
     echo "Building Docker image..."
@@ -17,12 +18,7 @@ steps:
 
 - script: |
     echo "Accepting Android SDK licenses..."
-    docker exec android-sdk-container powershell -Command "
-    $cmd = 'C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat --licenses'
-    for ($i=0; $i -lt 7; $i++) {
-        echo 'y' | cmd /c $cmd
-    }
-    "
+    docker exec android-sdk-container cmd /c "for /L %%i in (1,1,7) do (echo y | C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat --licenses > NUL)"
   displayName: 'Accept Android SDK Licenses'
 
 - script: |
