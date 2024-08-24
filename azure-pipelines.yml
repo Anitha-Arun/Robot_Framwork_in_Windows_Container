@@ -2,8 +2,7 @@ trigger:
 - main  # Adjust to your branch name if necessary
 
 pool:
-   vmImage: 'windows-latest' 
-   name: Azure Pipelines  # Change to 'windows-latest' if using a Windows agent
+  vmImage: 'windows-latest'  # Use the 'windows-latest' image for Windows agents
 
 steps:
 - checkout: self
@@ -27,7 +26,8 @@ steps:
     echo "Installing Android platform tools, build tools, and platform..."
     docker exec my-container powershell -Command "C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat 'platform-tools' 'platforms;android-28' 'build-tools;28.0.3'"
   displayName: 'Install Android SDK Components'
-  - script: |
+
+- script: |
     echo "Verifying ADB installation..."
     docker exec my-container powershell -Command "adb version"
   displayName: 'Verify ADB Installation'
@@ -36,6 +36,7 @@ steps:
     echo "Running appium-doctor to check setup..."
     docker exec my-container powershell -Command "appium-doctor"
   displayName: 'Run Appium Doctor'
+
 - script: |
     echo "Stopping Docker container..."
     docker stop my-container
