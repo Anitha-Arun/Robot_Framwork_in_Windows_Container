@@ -1,57 +1,47 @@
 trigger:
 - main
+
 pool:
-  vmImage: 'windows-latest' 
-  name: Default
+  vmImage: 'windows-latest'
+
 steps:
-- checkout: self
 - script: |
     echo "Building Docker image..."
-    docker build -t my-custom-image:latest .
+    docker build -t android-sdk-image .
   displayName: 'Build Docker Image'
-- script: |
-    echo "Removing existing container if it exists..."
-    docker rm -f my-container || true
-  displayName: 'Remove Existing Container'
+
 - script: |
     echo "Running Docker container..."
-    docker run --name my-container -d my-custom-image:latest powershell -Command "Start-Sleep -Seconds 3600"
+    docker run --name android-sdk-container -d android-sdk-image cmd /c "ping -t localhost > NUL"
   displayName: 'Run Docker Container'
+
 - script: |
     echo "Accepting Android SDK licenses..."
-    docker exec my-container powershell -Command "
-    $sdkmanager = 'C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat'
-    $licenses = @(
-        'android-sdk-license',
-        'android-sdk-preview-license',
-        'google-gdk-license',
-        'intel-android-extra-license',
-        'mips-android-sysimage-license'
-    )
-    foreach ($license in $licenses) {
-        echo y | & $sdkmanager --licenses
-        if (-not (Test-Path 'C:\android-sdk\licenses\$license')) {
-            New-Item -Path 'C:\android-sdk\licenses\$license' -ItemType File -Force
-            Add-Content -Path 'C:\android-sdk\licenses\$license' -Value '
-d56f5187479451eabf01fb78af6dfcb131a6481e'
-        }
+    docker exec android-sdk-container powershell -Command "
+    $cmd = 'C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat --licenses'
+    for ($i=0; $i -lt 7; $i++) {
+        echo 'y' | cmd /c $cmd
     }
     "
   displayName: 'Accept Android SDK Licenses'
+
 - script: |
-    echo "Installing Android platform tools, build tools, and platform..."
-    docker exec my-container powershell -Command "C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat 'platform-tools' 'platforms;android-28' 'build-tools;28.0.3'"
+    echo "Installing Android SDK components..."
+    docker exec android-sdk-container C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat "platform-tools" "platforms;android-28" "build-tools;28.0.3"
   displayName: 'Install Android SDK Components'
+
 - script: |
     echo "Verifying ADB installation..."
-    docker exec my-container powershell -Command "C:\\android-sdk\\platform-tools\\adb.exe version"
+    docker exec android-sdk-container C:\android-sdk\platform-tools\adb.exe version
   displayName: 'Verify ADB Installation'
+
 - script: |
-    echo "Running appium-doctor to check setup..."
-    docker exec my-container powershell -Command "appium-doctor"
+    echo "Running appium-doctor..."
+    docker exec android-sdk-container appium-doctor
   displayName: 'Run Appium Doctor'
+
 - script: |
-    echo "Stopping Docker container..."
-    docker stop my-container
-    docker rm my-container
-  displayName: 'Stop and Remove Container'
+    echo "Cleaning up..."
+    docker stop android-sdk-container
+    docker rm android-sdk-container
+  displayName: 'Clean Up'
