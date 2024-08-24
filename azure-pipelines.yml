@@ -1,54 +1,40 @@
 trigger:
 - main
-
 pool:
   vmImage: 'windows-latest' 
   name: Default
-
 steps:
 - checkout: self
-
 - script: |
     echo "Building Docker image..."
     docker build -t my-custom-image:latest .
   displayName: 'Build Docker Image'
-
 - script: |
     echo "Removing existing container if it exists..."
     docker rm -f my-container || true
   displayName: 'Remove Existing Container'
-
 - script: |
     echo "Running Docker container..."
     docker run --name my-container -d my-custom-image:latest powershell -Command "Start-Sleep -Seconds 3600"
   displayName: 'Run Docker Container'
-
 - script: |
     echo "Accepting Android SDK licenses..."
-    docker exec my-container powershell -Command "
-      \$env:JAVA_HOME = 'C:\\Program Files\\Android\\jdk\\microsoft_dist_openjdk_11.0.10.9-2';
-      Start-Process 'C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat' -ArgumentList '--licenses' -Wait -NoNewWindow;
-      For (\$i=0; \$i -lt 7; \$i++) { Write-Host 'y' }
-    "
+    docker exec my-container powershell -Command "for ($i=0; $i -lt 7; $i++) { echo 'y' | C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat --licenses }"
   displayName: 'Accept Android SDK Licenses'
-
 - script: |
     echo "Installing Android platform tools, build tools, and platform..."
     docker exec my-container powershell -Command "C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat 'platform-tools' 'platforms;android-28' 'build-tools;28.0.3'"
   displayName: 'Install Android SDK Components'
-
 - script: |
     echo "Verifying ADB installation..."
     docker exec my-container powershell -Command "C:\\android-sdk\\platform-tools\\adb.exe version"
   displayName: 'Verify ADB Installation'
-
 - script: |
     echo "Running appium-doctor to check setup..."
     docker exec my-container powershell -Command "appium-doctor"
   displayName: 'Run Appium Doctor'
-
 - script: |
     echo "Stopping Docker container..."
     docker stop my-container
     docker rm my-container
-  displayName: 'Stop and Remove Docker Container'
+  displayName: 'Stop and Remove Container'
