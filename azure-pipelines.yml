@@ -24,18 +24,23 @@ steps:
   displayName: 'Run Docker Container'
 
 - script: |
+    echo "Creating input file for SDK licenses..."
+    docker exec my-container powershell -Command "
+    $inputFile = 'C:\\temp\\input.txt';
+    'y' * 10 | Out-File -FilePath $inputFile -Encoding ASCII
+    "
+  displayName: 'Create SDK License Input File'
+
+- script: |
     echo "Accepting Android SDK licenses..."
     docker exec my-container powershell -Command "
-    $ErrorActionPreference = 'Stop';
     $sdkmanagerPath = 'C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat';
     if (Test-Path $sdkmanagerPath) {
         Write-Output 'Found sdkmanager at: $sdkmanagerPath';
-        $process = Start-Process -FilePath $sdkmanagerPath -ArgumentList '--licenses' -NoNewWindow -PassThru -Wait -RedirectStandardInput 'C:\\temp\\input.txt';
-        Write-Output 'Accepting licenses...';
         $inputFile = 'C:\\temp\\input.txt';
         if (Test-Path $inputFile) {
-            Add-Content -Path $inputFile -Value 'y';
-            Start-Process -FilePath $sdkmanagerPath -ArgumentList '--licenses' -NoNewWindow -Wait -RedirectStandardInput $inputFile;
+            Write-Output 'Accepting licenses...';
+            & $sdkmanagerPath --licenses < $inputFile
             Write-Output 'Licenses accepted successfully.';
         } else {
             Write-Output 'Input file not found. Failed to accept licenses.';
