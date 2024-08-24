@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  vmImage: 'windows-latest' 
+  vmImage: 'windows-latest'
   name: Default
 
 steps:
@@ -24,33 +24,19 @@ steps:
   displayName: 'Run Docker Container'
 
 - script: |
-    echo "Creating input file for SDK licenses..."
-    docker exec my-container powershell -Command "
-    $inputFile = 'C:\\temp\\input.txt';
-    'y' * 10 | Out-File -FilePath $inputFile -Encoding ASCII
-    "
-  displayName: 'Create SDK License Input File'
-
-- script: |
     echo "Accepting Android SDK licenses..."
-    docker exec my-container powershell -Command "
+    docker exec my-container powershell -Command @"
     $sdkmanagerPath = 'C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat';
     if (Test-Path $sdkmanagerPath) {
         Write-Output 'Found sdkmanager at: $sdkmanagerPath';
-        $inputFile = 'C:\\temp\\input.txt';
-        if (Test-Path $inputFile) {
-            Write-Output 'Accepting licenses...';
-            & $sdkmanagerPath --licenses < $inputFile
-            Write-Output 'Licenses accepted successfully.';
-        } else {
-            Write-Output 'Input file not found. Failed to accept licenses.';
-            exit 1;
-        }
+        Write-Output 'Accepting licenses...';
+        & $sdkmanagerPath --licenses
+        Write-Output 'Licenses accepted successfully.';
     } else {
         Write-Output 'sdkmanager not found at expected location. Please check your Android SDK installation.';
         exit 1;
     }
-    "
+    "@
   displayName: 'Accept Android SDK Licenses'
 
 - script: |
