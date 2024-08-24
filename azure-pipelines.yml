@@ -25,7 +25,11 @@ steps:
 
 - script: |
     echo "Accepting Android SDK licenses..."
-    docker exec my-container powershell -Command "$yes = 'y'; 1..100 | ForEach-Object { $yes } | & 'C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat' --licenses"
+    docker exec my-container powershell -Command "
+      \$env:JAVA_HOME = 'C:\\Program Files\\Android\\jdk\\microsoft_dist_openjdk_11.0.10.9-2';
+      Start-Process 'C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat' -ArgumentList '--licenses' -Wait -NoNewWindow;
+      For (\$i=0; \$i -lt 7; \$i++) { Write-Host 'y' }
+    "
   displayName: 'Accept Android SDK Licenses'
 
 - script: |
