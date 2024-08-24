@@ -14,7 +14,7 @@ steps:
 
 - script: |
     echo "Running Docker container..."
-    docker run --name my-container -d my-custom-image:latest /bin/bash -c "while true; do sleep 30; done;"
+    docker run --name my-container -d my-custom-image:latest powershell -Command "Start-Sleep -Seconds 3600"
   displayName: 'Run Docker Container'
 
 - script: |
