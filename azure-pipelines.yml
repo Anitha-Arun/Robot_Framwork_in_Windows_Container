@@ -24,44 +24,29 @@ steps:
     set SDKMANAGER=C:\Users\v-adamarla\AppData\Local\Android\Sdk\cmdline-tools\latest\bin\sdkmanager.bat
     if exist %SDKMANAGER% (
         echo Found sdkmanager at: %SDKMANAGER%
-        echo y | %SDKMANAGER% --licenses
+        echo Creating temporary response file...
+        echo y > %TEMP%\sdk_response.txt
+        echo y >> %TEMP%\sdk_response.txt
+        echo y >> %TEMP%\sdk_response.txt
+        echo y >> %TEMP%\sdk_response.txt
+        echo y >> %TEMP%\sdk_response.txt
+        echo y >> %TEMP%\sdk_response.txt
+        echo y >> %TEMP%\sdk_response.txt
+        echo Accepting licenses...
+        %SDKMANAGER% --licenses < %TEMP%\sdk_response.txt
+        if %ERRORLEVEL% EQU 0 (
+            echo Licenses accepted successfully.
+        ) else (
+            echo Failed to accept licenses. Error code: %ERRORLEVEL%
+            exit /b 1
+        )
+        del %TEMP%\sdk_response.txt
     ) else (
         echo sdkmanager not found at expected location. Please check your Android SDK installation.
         exit /b 1
     )
     "
   displayName: 'Accept Android SDK Licenses'
-
-- script: |
-    echo "Installing Android SDK components..."
-    docker exec android-sdk-container cmd /c "
-    set SDKMANAGER=C:\Users\v-adamarla\AppData\Local\Android\Sdk\cmdline-tools\latest\bin\sdkmanager.bat
-    if exist %SDKMANAGER% (
-        %SDKMANAGER% "platform-tools" "platforms;android-28" "build-tools;28.0.3"
-    ) else (
-        echo sdkmanager not found at expected location. Please check your Android SDK installation.
-        exit /b 1
-    )
-    "
-  displayName: 'Install Android SDK Components'
-
-- script: |
-    echo "Verifying ADB installation..."
-    docker exec android-sdk-container cmd /c "
-    set ADB=C:\Users\v-adamarla\AppData\Local\Android\Sdk\platform-tools\adb.exe
-    if exist %ADB% (
-        %ADB% version
-    ) else (
-        echo ADB not found at expected location. Please check your Android SDK installation.
-        exit /b 1
-    )
-    "
-  displayName: 'Verify ADB Installation'
-
-- script: |
-    echo "Running appium-doctor..."
-    docker exec android-sdk-container appium-doctor
-  displayName: 'Run Appium Doctor'
 
 - script: |
     echo "Cleaning up..."
