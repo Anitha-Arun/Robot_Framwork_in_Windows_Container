@@ -3,62 +3,49 @@ trigger:
 
 pool:
   vmImage: 'windows-latest'
+  name: Default
 
 steps:
 - checkout: self
 
-# Build Docker image
 - script: |
     echo "Building Docker image..."
     docker build -t my-custom-image:latest .
   displayName: 'Build Docker Image'
 
-# Remove any existing container with the same name
-- powershell: |
+- script: |
     echo "Removing existing container if it exists..."
-    try {
-        docker inspect my-container -ErrorAction Stop | Out-Null
-        docker rm -f my-container
-        echo "Container removed."
-    } catch {
-        echo "Container does not exist or could not be removed: $_"
-    }
+    docker rm -f my-container || true
   displayName: 'Remove Existing Container'
 
-# Run Docker container interactively
-- powershell: |
-    echo "Running Docker container interactively..."
-    docker run --name my-container -d -it my-custom-image:latest powershell -Command "Start-Sleep -Seconds 3600"
-  displayName: 'Run Docker Container Interactively'
+- script: |
+    echo "Running Docker container..."
+    docker run --name my-container -d my-custom-image:latest powershell -Command "Start-Sleep -Seconds 3600"
+  displayName: 'Run Docker Container'
 
-# Accept all Android SDK licenses
-- powershell: |
+- script: |
     echo "Accepting Android SDK licenses..."
-    docker exec -i my-container powershell -Command "echo 'y' | C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat --licenses"
+    docker exec my-container powershell -Command "C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat --licenses | ForEach-Object { 'y' }"
   displayName: 'Accept Android SDK Licenses'
 
-# Install Android SDK components
-- powershell: |
+- script: |
     echo "Installing Android platform tools, build tools, and platform..."
     docker exec my-container powershell -Command "C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat 'platform-tools' 'platforms;android-28' 'build-tools;28.0.3'"
   displayName: 'Install Android SDK Components'
 
-# Verify ADB installation
-- powershell: |
+- script: |
     echo "Verifying ADB installation..."
     docker exec my-container powershell -Command "C:\\android-sdk\\platform-tools\\adb.exe version"
   displayName: 'Verify ADB Installation'
 
-# Run Appium Doctor to check setup
-- powershell: |
+- script: |
     echo "Running appium-doctor to check setup..."
     docker exec my-container powershell -Command "appium-doctor"
   displayName: 'Run Appium Doctor'
 
-# Stop and remove the Docker container
-- powershell: |
+- script: |
     echo "Stopping Docker container..."
     docker stop my-container
     docker rm my-container
   displayName: 'Stop and Remove Docker Container'
-  condition: always()  # Ensure cleanup runs even if previous steps fail
+ what to change here 
