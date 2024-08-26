@@ -3,18 +3,14 @@ trigger:
 
 pool:
   vmImage: 'windows-latest'
-  name: Default
 
 steps:
 - checkout: self
 
 # Build Docker image
-- task: Docker@2
-  inputs:
-    command: 'build'
-    Dockerfile: '**/Dockerfile'
-    tags: 'latest'
-    imageName: 'my-custom-image'
+- script: |
+    echo "Building Docker image..."
+    docker build -t my-custom-image:latest .
   displayName: 'Build Docker Image'
 
 # Remove any existing container with the same name
