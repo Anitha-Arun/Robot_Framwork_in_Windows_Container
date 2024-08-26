@@ -24,18 +24,9 @@ steps:
   displayName: 'Run Docker Container'
 
 # Accept all Android SDK licenses interactively
-- powershell: |
+- script: |
     echo "Accepting Android SDK licenses interactively..."
-    docker exec -i my-container powershell -Command {
-        $sdkManagerPath = "C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat"
-        $licensesCmd = "$sdkManagerPath --licenses"
-        $process = Start-Process -FilePath $licensesCmd -NoNewWindow -PassThru -RedirectStandardInput 'y'
-        for ($i = 0; $i -lt 7; $i++) {
-            Start-Sleep -Milliseconds 500
-            $process.StandardInput.WriteLine('y')
-        }
-        $process.WaitForExit()
-    }
+    docker exec -i my-container cmd.exe /c "echo y | C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat --licenses"
   displayName: 'Accept Android SDK Licenses Interactively'
 
 - script: |
