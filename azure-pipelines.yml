@@ -18,8 +18,15 @@ steps:
 
 - powershell: |
     echo "Removing existing container if it exists..."
-    docker rm -f my-container || true
+    try {
+        docker inspect my-container -ErrorAction Stop | Out-Null
+        docker rm -f my-container
+        echo "Container removed."
+    } catch {
+        echo "Container does not exist or could not be removed: $_"
+    }
   displayName: 'Remove Existing Container'
+
 
 - powershell: |
     echo "Running Docker container..."
