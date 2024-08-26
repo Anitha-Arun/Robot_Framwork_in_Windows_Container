@@ -25,13 +25,7 @@ steps:
 
 - powershell: |
     echo "Accepting Android SDK licenses..."
-    docker exec my-container powershell -Command {
-        $licenses = "C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat --licenses"
-        $process = Start-Process -FilePath $licenses -NoNewWindow -PassThru
-        $process.StandardInput.WriteLine('y')
-        $process.StandardInput.Close()
-        $process.WaitForExit()
-    }
+    docker exec -i my-container cmd /c "echo y | C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat --licenses"
   displayName: 'Accept Android SDK Licenses'
 
 - script: |
