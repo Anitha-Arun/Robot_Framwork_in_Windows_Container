@@ -16,50 +16,12 @@ steps:
     imageName: 'my-custom-image'
   displayName: 'Build Docker Image'
 
-- powershell: |
-    echo "Verifying if Docker image exists..."
-    $imageExists = docker images -q my-custom-image:latest
-    if (-not $imageExists) {
-        throw "Docker image my-custom-image:latest does not exist. Build might have failed."
-    }
-  displayName: 'Verify Docker Image Exists'
 
-- powershell: |
-    echo "Removing existing container if it exists..."
-    try {
-        docker inspect my-container -ErrorAction Stop | Out-Null
-        docker rm -f my-container
-        echo "Container removed."
-    } catch {
-        echo "Container does not exist or could not be removed: $_"
-    }
-  displayName: 'Remove Existing Container'
-
-- powershell: |
-    echo "Running Docker container..."
-    docker run --name my-container -d my-custom-image:latest powershell -Command "Start-Sleep -Seconds 3600"
-  displayName: 'Run Docker Container'
-
-- powershell: |
-    echo "Accepting Android SDK licenses..."
-    docker exec my-container powershell -Command "C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat --licenses | ForEach-Object { 'y' }"
-  displayName: 'Accept Android SDK Licenses'
-
-- powershell: |
-    echo "Installing Android platform tools, build tools, and platform..."
-    docker exec my-container powershell -Command "C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat 'platform-tools' 'platforms;android-28' 'build-tools;28.0.3'"
-  displayName: 'Install Android SDK Components'
-
-- powershell: |
-    echo "Verifying ADB installation..."
-    docker exec my-container powershell -Command "C:\\android-sdk\\platform-tools\\adb.exe version"
-  displayName: 'Verify ADB Installation'
-
-- powershell: |
-    echo "Running appium-doctor to check setup..."
-    docker exec my-container powershell -Command "appium-doctor"
-  displayName: 'Run Appium Doctor'
-
+- script: |
+    docker ps -a --filter "name=mycontainer" -q | ForEach-Object { docker rm -f $_ }
+    docker run --name mycontainer mydockerimage:latest C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat --licenses
+  displayName: 'Run Container and Accept Licenses'
+  
 - powershell: |
     echo "Stopping Docker container..."
     docker stop my-container
