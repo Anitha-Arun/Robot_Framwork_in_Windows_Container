@@ -17,6 +17,14 @@ steps:
   displayName: 'Build Docker Image'
 
 - powershell: |
+    echo "Verifying if Docker image exists..."
+    $imageExists = docker images -q my-custom-image:latest
+    if (-not $imageExists) {
+        throw "Docker image my-custom-image:latest does not exist. Build might have failed."
+    }
+  displayName: 'Verify Docker Image Exists'
+
+- powershell: |
     echo "Removing existing container if it exists..."
     try {
         docker inspect my-container -ErrorAction Stop | Out-Null
@@ -26,7 +34,6 @@ steps:
         echo "Container does not exist or could not be removed: $_"
     }
   displayName: 'Remove Existing Container'
-
 
 - powershell: |
     echo "Running Docker container..."
