@@ -23,10 +23,10 @@ steps:
     docker run --name my-container -d my-custom-image:latest powershell -Command "Start-Sleep -Seconds 3600"
   displayName: 'Run Docker Container'
 
- - script: |
-      cd C:\Users\v-adamarla\AppData\Local\Android\Sdk\cmdline-tools\latest\bin
-      sdkmanager --licenses
-    displayName: 'Accept Android SDK Licenses'
+- script: |
+    cd C:\Users\v-adamarla\AppData\Local\Android\Sdk\cmdline-tools\latest\bin
+    sdkmanager --licenses
+  displayName: 'Accept Android SDK Licenses'
 
 - script: |
     echo "Installing Android platform tools, build tools, and platform..."
@@ -48,4 +48,3 @@ steps:
     docker stop my-container
     docker rm my-container
   displayName: 'Stop and Remove Docker Container'
-
