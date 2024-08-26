@@ -23,10 +23,11 @@ steps:
     docker run --name my-container -d my-custom-image:latest powershell -Command "Start-Sleep -Seconds 3600"
   displayName: 'Run Docker Container'
 
-# Accept all Android SDK licenses interactively
 - script: |
-    echo y | sdkmanager.bat --licenses
+    cd C:\android-sdk\cmdline-tools\latest\bin
+    sdkmanager.bat --licenses
   displayName: 'Accept Android SDK Licenses'
+
 
 - script: |
     echo "Installing Android platform tools, build tools, and platform..."
