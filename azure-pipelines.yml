@@ -18,10 +18,14 @@ steps:
 
 
 - script: |
-    docker ps -a --filter "name=mycontainer" -q | ForEach-Object { docker rm -f $_ }
-    docker run --name mycontainer mydockerimage:latest C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat --licenses
+    docker rm -f android-container || true
+    docker run --name android-container -d windows-image
+    docker exec android-container C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat --licenses
   displayName: 'Run Container and Accept Licenses'
-  
+
+- script: |
+    "C:\WINDOWS\system32\cmd.exe" /D /E:ON /V:OFF /S /C "CALL "C:\Users\v-adamarla\agent\agent\_work\_temp\092d38f6-b7a4-4afa-8b36-d1c485cba05c.cmd""
+  displayName: 'Execute Command'
 - powershell: |
     echo "Stopping Docker container..."
     docker stop my-container
