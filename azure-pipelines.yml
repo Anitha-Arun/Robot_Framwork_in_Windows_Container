@@ -1,3 +1,5 @@
+# Azure Pipeline to Build Docker and Manage Android SDK Licenses
+
 trigger:
 - main
 
@@ -6,29 +8,18 @@ pool:
   name: Default
 
 steps:
-- checkout: self
-
 - task: Docker@2
+  displayName: 'Build Docker Image'
   inputs:
     command: 'build'
     Dockerfile: '**/Dockerfile'
-    tags: 'latest'
-    imageName: 'my-custom-image'
-  displayName: 'Build Docker Image'
-
+    tags: 'windows-image:latest'
 
 - script: |
-    docker rm -f android-container || true
-    docker run --name android-container -d windows-image
-    docker exec android-container C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat --licenses
-  displayName: 'Run Container and Accept Licenses'
-
+    docker rm -f android-container || echo "No existing container to remove"
+    docker run --name android-container windows-image:latest "C:\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat" --licenses
+  displayName: 'Run SDK Manager in Docker Container'
+  
 - script: |
-    "C:\WINDOWS\system32\cmd.exe" /D /E:ON /V:OFF /S /C "CALL "C:\Users\v-adamarla\agent\agent\_work\_temp\092d38f6-b7a4-4afa-8b36-d1c485cba05c.cmd""
-  displayName: 'Execute Command'
-- powershell: |
-    echo "Stopping Docker container..."
-    docker stop my-container
-    docker rm my-container
-  displayName: 'Stop and Remove Docker Container'
-  condition: always()  # Ensure cleanup runs even if previous steps fail
+    docker exec android-container cmd /C "echo Accepting licenses..."
+  displayName: 'Accept Licenses in Running Container'
