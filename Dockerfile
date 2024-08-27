@@ -11,6 +11,7 @@ RUN Invoke-WebRequest -Uri https://github.com/AdoptOpenJDK/openjdk11-binaries/re
     $javaPath = (Get-ChildItem -Path C:\Java -Filter 'jdk*' -Directory).FullName; \
     [Environment]::SetEnvironmentVariable('JAVA_HOME', $javaPath, [EnvironmentVariableTarget]::Machine); \
     [Environment]::SetEnvironmentVariable('PATH', $env:PATH + ';' + $javaPath + '\bin', [EnvironmentVariableTarget]::Machine);
+
 # Install Chocolatey
 RUN Invoke-WebRequest -Uri 'https://community.chocolatey.org/install.ps1' -OutFile 'C:\\install.ps1'; \
     & 'C:\\install.ps1'
@@ -23,9 +24,13 @@ RUN Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.8.5/python-3.8.5
     Start-Process -FilePath 'C:\\python-3.8.5-amd64.exe' -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1' -NoNewWindow -Wait; \
     Remove-Item -Path 'C:\\python-3.8.5-amd64.exe'
 
+
+# Install pip explicitly using ensurepip
+RUN python -m ensurepip --default-pip; \
+    python -m pip install --upgrade pip
+
 # Install Appium 1.22.3 and appium-doctor using npm
 RUN npm install -g appium@1.22.3 appium-doctor --unsafe-perm=true
-
 
 # Install Android SDK command-line tools
 RUN mkdir C:\android-sdk; \
@@ -40,6 +45,7 @@ RUN mkdir C:\android-sdk; \
 RUN [Environment]::SetEnvironmentVariable('ANDROID_HOME', 'C:\android-sdk', [EnvironmentVariableTarget]::Machine); \
     [Environment]::SetEnvironmentVariable('PATH', $env:PATH + ';C:\android-sdk\cmdline-tools\latest\bin;C:\android-sdk\platform-tools', [EnvironmentVariableTarget]::Machine);
 
+# Install Google Chrome
 RUN choco install googlechrome -y 
 
 # Manually download and install ChromeDriver
@@ -74,7 +80,24 @@ RUN if (Test-Path 'C:\\Program Files\\chromedriver\\chromedriver.exe') { \
         exit 1; \
     }
 
+# Copy the requirements.txt file and Python script to the container
+COPY requirements.txt C:\\app\\requirements.txt
+COPY accept_licenses.py C:\\app\\accept_licenses.py
 
+# Install the required Python packages using python -m pip
+RUN python -m pip install --no-cache-dir -r C:\\app\\requirements.txt
 
-# Default command
+# Set the working directory
+WORKDIR C:\\app
+
+# Run Python script to accept licenses
+RUN python C:\\app\\accept_licenses.py
+
+# Run Appium Doctor
+RUN appium-doctor
+# Set the PYTHONPATH environment variable
+RUN [Environment]::SetEnvironmentVariable('PYTHONPATH', 'C:\\app\\PartnerDevices_Automation\\Libraries;C:\\app\\PartnerDevices_Automation\\resources\\keywords;C:\\app\\PartnerDevices_Automation', [EnvironmentVariableTarget]::Machine);
+# Copy the PartnerDevices_Automation folder to the container
+COPY PartnerDevices_Automation C:\\app\\PartnerDevices_Automation
+
 CMD ["powershell"]
