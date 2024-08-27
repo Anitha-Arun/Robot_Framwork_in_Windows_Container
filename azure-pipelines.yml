@@ -23,25 +23,12 @@ steps:
     docker run --name my-container -d my-custom-image:latest powershell -Command "Start-Sleep -Seconds 3600"
   displayName: 'Run Docker Container'
 
-- script: |
-    cd C:\Users\v-adamarla\AppData\Local\Android\Sdk\cmdline-tools\latest\bin
-    sdkmanager --licenses
-  displayName: 'Accept Android SDK Licenses'
 
 - script: |
-    echo "Installing Android platform tools, build tools, and platform..."
-    docker exec my-container powershell -Command "C:\\android-sdk\\cmdline-tools\\latest\\bin\\sdkmanager.bat 'platform-tools' 'platforms;android-28' 'build-tools;28.0.3'"
-  displayName: 'Install Android SDK Components'
+    echo "Running Robot Framework tests..."
+    docker exec my-container powershell -Command "cd C:\app\PartnerDevices_Automation; robot -d results\t -i 308426 tests"
+  displayName: 'Run Robot Framework Tests'
 
-- script: |
-    echo "Verifying ADB installation..."
-    docker exec my-container powershell -Command "C:\\android-sdk\\platform-tools\\adb.exe version"
-  displayName: 'Verify ADB Installation'
-
-- script: |
-    echo "Running appium-doctor to check setup..."
-    docker exec my-container powershell -Command "appium-doctor"
-  displayName: 'Run Appium Doctor'
 
 - script: |
     echo "Stopping Docker container..."
