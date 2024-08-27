@@ -20,7 +20,7 @@ steps:
 
 - script: |
     echo "Running Docker container with mounted volume..."
-    docker run --name my-container -d -v C:\Users\v-adamarla\Desktop\AutomationApk\PartnerDevices_Automation:C:\app\mounted-folder my-custom-image:latest powershell -Command "Start-Sleep -Seconds 3600"
+    docker run --name my-container -d -v C:\Users\v-adamarla\Desktop\AutomationApk\PartnerDevices_Automation:C:\app\PartnerDevices_Automation my-custom-image:latest powershell -Command "Start-Sleep -Seconds 3600"
   displayName: 'Run Docker Container with Mounted Volume'
 
 - script: |
