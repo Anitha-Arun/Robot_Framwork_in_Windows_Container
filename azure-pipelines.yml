@@ -25,7 +25,7 @@ steps:
 
 - script: |
     echo "Running Robot Framework tests..."
-    docker exec my-container powershell -Command "cd C:\app\mounted-folder; robot -d results\t -i 308426 tests"
+    docker exec my-container powershell -Command "cd C:\app\PartnerDevices_Automation; robot -d results\t -i 308426 tests"
   displayName: 'Run Robot Framework Tests'
 
 - script: |
