@@ -98,6 +98,6 @@ RUN appium-doctor
 # Set the PYTHONPATH environment variable
 RUN [Environment]::SetEnvironmentVariable('PYTHONPATH', 'C:\\app\\PartnerDevices_Automation\\Libraries;C:\\app\\PartnerDevices_Automation\\resources\\keywords;C:\\app\\PartnerDevices_Automation', [EnvironmentVariableTarget]::Machine);
 # Copy the PartnerDevices_Automation folder to the container
-COPY PartnerDevices_Automation C:\\app\\PartnerDevices_Automation
+#COPY PartnerDevices_Automation C:\\app\\PartnerDevices_Automation
 
 CMD ["powershell"]
